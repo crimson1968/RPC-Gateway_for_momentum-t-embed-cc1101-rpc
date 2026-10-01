@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import base64
 import ipaddress
 import json
 import os
@@ -21,6 +22,7 @@ JobId = Annotated[int, Field(strict=True, ge=1, le=4294967295)]
 Duration = Annotated[int, Field(strict=True, ge=100, le=60000)]
 Frequency = Annotated[int, Field(strict=True, ge=281000000, le=962000000)]
 ShortText = Annotated[str, Field(max_length=128)]
+Base64File = Annotated[str, Field(max_length=2796204)]
 
 
 class DeviceModel(BaseModel):
@@ -32,7 +34,7 @@ class Status(DeviceModel):
     board_id: Literal["t-embed"]
     firmware: ShortText
     idf_version: ShortText
-    api_version: Literal["1.0"]
+    api_version: Literal["1.1"]
     uptime_ms: Annotated[int, Field(ge=0)]
     network_mode: Literal["ap", "sta"]
     network_up: bool
@@ -43,8 +45,10 @@ class Status(DeviceModel):
 
 
 class Capabilities(DeviceModel):
-    api_version: Literal["1.0"]
+    api_version: Literal["1.1"]
     read_only: bool
+    radio_read_only: Literal[True]
+    storage_write: bool
     subghz_rx: bool
     subghz_tx: Literal[False]
     protocol_decode: Literal[False]
@@ -73,6 +77,60 @@ class Job(DeviceModel):
     high_pulses: UInt
     rssi_samples: UInt
     peak_rssi_dbm: float | None
+
+
+class JobList(DeviceModel):
+    jobs: list[Job]
+    retained: Annotated[int, Field(ge=0)]
+
+
+class CancelAccepted(DeviceModel):
+    id: JobId
+    state: Literal["cancelling"]
+
+
+class Settings(DeviceModel):
+    measurement_units: Literal["metric", "imperial"]
+    time_format: Literal["12h", "24h"]
+    date_format: Literal["dmy", "mdy", "ymd"]
+    timezone_automatic: bool
+    timezone_offset_minutes: Annotated[int, Field(ge=-1440, le=1440)]
+    writable: Literal[False]
+
+
+class BatteryDiagnostics(DeviceModel):
+    charge_percent: Annotated[float, Field(ge=0, le=100)]
+    health_percent: Annotated[float, Field(ge=0, le=100)]
+    charging: bool
+    gauge_ok: bool
+    voltage_v: float
+    temperature_c: float
+
+
+class WifiDiagnostics(DeviceModel):
+    connected: bool
+    rssi_dbm: int | None = None
+    channel: int | None = None
+
+
+class MemoryDiagnostics(DeviceModel):
+    free_internal_bytes: Annotated[int, Field(ge=0)]
+    largest_internal_block_bytes: Annotated[int, Field(ge=0)]
+
+
+class StorageDiagnostics(DeviceModel):
+    available: bool
+    total_bytes: Annotated[int, Field(ge=0)] | None = None
+    free_bytes: Annotated[int, Field(ge=0)] | None = None
+
+
+class Diagnostics(DeviceModel):
+    battery: BatteryDiagnostics
+    wifi: WifiDiagnostics
+    memory: MemoryDiagnostics
+    storage: StorageDiagnostics
+    uptime_ms: Annotated[int, Field(ge=0)]
+    epoch_seconds: Annotated[int, Field(ge=0)]
 
 
 def device_url(value: str) -> str:
@@ -111,7 +169,9 @@ class Device:
                             messages = {
                                 400: "invalid_request: firmware rejected the input",
                                 404: "not_found: job expired, WebFS restarted, or RPC route missing",
-                                409: "busy: another receive job is running",
+                                409: ("job_not_running: the retained job cannot be cancelled"
+                                      if path.startswith("/api/jobs/cancel") else
+                                      "busy: another receive job is running"),
                                 501: "unsupported: this firmware does not support the operation",
                             }
                             raise ToolError(messages.get(code, f"device_http_error: HTTP {code}"))
@@ -124,12 +184,12 @@ class Device:
                         return model.model_validate(result)
         except (httpx.RequestError, TimeoutError) as exc:
             suffix = (" The RX request may have reached the device. Check tembed_status; "
-                      "do not automatically retry." if method == "POST" else
+                      "do not automatically retry." if path == "/api/subghz/rx" else
                       " Check WiFi and keep Web-Filesystem open.")
             raise ToolError("device_unreachable_or_timeout." + suffix) from exc
         except (ValueError, ValidationError) as exc:
-            suffix = " Check tembed_status before repeating RX." if method == "POST" else ""
-            raise ToolError("invalid_response: expected Phase-1 API 1.0 JSON." + suffix) from exc
+            suffix = " Check tembed_status before repeating RX." if path == "/api/subghz/rx" else ""
+            raise ToolError("invalid_response: expected WebFS RPC API 1.1 JSON." + suffix) from exc
 
     async def status(self):
         return await self.request("GET", "/api/status", Status)
@@ -160,12 +220,31 @@ class Device:
             raise ToolError("invalid_response: device returned a different job ID")
         return result
 
+    async def jobs(self):
+        return await self.request("GET", "/api/jobs", JobList)
+
+    async def cancel_job(self, job_id: int):
+        if type(job_id) is not int or not 1 <= job_id <= 4294967295:
+            raise ToolError("invalid_job_id: use a positive retained job ID")
+        result = await self.request(
+            "POST", f"/api/jobs/cancel?id={job_id}", CancelAccepted, expected=202
+        )
+        if result.id != job_id:
+            raise ToolError("invalid_response: device returned a different job ID")
+        return result
+
+    async def settings(self):
+        return await self.request("GET", "/api/settings", Settings)
+
+    async def diagnostics(self):
+        return await self.request("GET", "/api/diagnostics", Diagnostics)
+
 
 def make_server(device: Device, **settings) -> FastMCP:
     server = FastMCP(
         "T-Embed Receive Gateway",
         **settings,
-        instructions=("Use only this configured T-Embed. Direct RX tools are receive-only. USB buttons operate the actual device menu and can cause side effects. SD directory listing is available. "
+        instructions=("Use only this configured T-Embed. Direct RX tools are receive-only. USB buttons operate the actual device menu and can cause side effects. SD-card list, download and upload tools are available. "
                       "No dedicated IR or NFC tools exist. RX returns pulse statistics and RSSI, not decoded "
                       "messages. Noise can produce pulses. Only the latest job is retained. "
                       "Poll tembed_job at most once per second. Never automatically repeat a "
@@ -181,8 +260,18 @@ def make_server(device: Device, **settings) -> FastMCP:
 
     @server.tool(annotations=read)
     async def tembed_capabilities() -> Capabilities:
-        """Read supported Phase-1 receive capabilities and limits. No RF action."""
+        """Read supported API 1.1 capabilities and limits. No RF action."""
         return await device.capabilities()
+
+    @server.tool(annotations=read)
+    async def tembed_settings() -> Settings:
+        """Read locale, clock, date and timezone settings. Settings are not changed."""
+        return await device.settings()
+
+    @server.tool(annotations=read)
+    async def tembed_diagnostics() -> Diagnostics:
+        """Read battery, Wi-Fi, memory, SD-card and uptime diagnostics."""
+        return await device.diagnostics()
 
     @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False,
                                            idempotentHint=False, openWorldHint=False))
@@ -204,6 +293,17 @@ def make_server(device: Device, **settings) -> FastMCP:
         """
         return await device.job(job_id)
 
+    @server.tool(annotations=read)
+    async def tembed_jobs() -> JobList:
+        """List retained receive jobs. The current firmware retains at most one."""
+        return await device.jobs()
+
+    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False,
+                                           idempotentHint=True, openWorldHint=False))
+    async def tembed_cancel_job(job_id: JobId) -> CancelAccepted:
+        """Request cancellation of the active receive-only job. Does not transmit RF."""
+        return await device.cancel_job(job_id)
+
     from usb_remote import UsbRemote
     usb = UsbRemote()
     server.tembed_usb = usb
@@ -214,6 +314,26 @@ def make_server(device: Device, **settings) -> FastMCP:
     async def tembed_files_list(path: str = "/ext") -> dict:
         """List SD-card files through WebFS. Does not execute files."""
         return await files.list(path)
+
+    @server.tool(annotations=read)
+    async def tembed_file_download(path: str) -> dict:
+        """Download one SD-card file, up to 2 MiB, returned as base64."""
+        content = await files.download(path)
+        return {
+            "path": path,
+            "size": len(content),
+            "content_base64": base64.b64encode(content).decode("ascii"),
+        }
+
+    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True,
+                                           idempotentHint=True, openWorldHint=False))
+    async def tembed_file_upload(path: str, content_base64: Base64File) -> dict:
+        """Upload one base64-encoded SD-card file, up to 2 MiB; replaces that path."""
+        try:
+            content = base64.b64decode(content_base64, validate=True)
+        except (ValueError, TypeError) as exc:
+            raise ToolError("invalid_base64: content_base64 is not valid base64") from exc
+        return await files.mutate("upload", path, content=content)
 
     @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False))
     async def tembed_usb_connect() -> dict:

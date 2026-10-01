@@ -58,10 +58,33 @@ def register_ui(server, device, hosts):
     async def capabilities(request):
         return JSONResponse((await device.capabilities()).model_dump())
 
+    @server.custom_route('/ui/api/settings', methods=['GET'])
+    @guarded
+    async def settings(request):
+        return JSONResponse((await device.settings()).model_dump())
+
+    @server.custom_route('/ui/api/diagnostics', methods=['GET'])
+    @guarded
+    async def diagnostics(request):
+        return JSONResponse((await device.diagnostics()).model_dump())
+
+    @server.custom_route('/ui/api/jobs', methods=['GET'])
+    @guarded
+    async def jobs(request):
+        return JSONResponse((await device.jobs()).model_dump())
+
     @server.custom_route('/ui/api/jobs/{job_id:int}', methods=['GET'])
     @guarded
     async def job(request):
         return JSONResponse((await device.job(request.path_params['job_id'])).model_dump())
+
+    @server.custom_route('/ui/api/jobs/{job_id:int}/cancel', methods=['POST'])
+    @guarded
+    async def job_cancel(request):
+        return JSONResponse(
+            (await device.cancel_job(request.path_params['job_id'])).model_dump(),
+            status_code=202,
+        )
 
     @server.custom_route('/ui/api/rx', methods=['POST'])
     @guarded

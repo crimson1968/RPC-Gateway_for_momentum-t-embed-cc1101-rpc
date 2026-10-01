@@ -31,7 +31,7 @@ class WebFiles:
             raise ToolError('webfs_timeout: operation may be incomplete; inspect files before retrying') from exc
     async def list(self,path='/ext'):
         path=sd_path(path)
-        raw=await self.call('GET','list',{'path':path})
+        raw=await self.call('GET','storage/list',{'path':path})
         try:
             data=json.loads(raw)
             if not isinstance(data,dict) or data.get('path')!=path or not isinstance(data.get('entries'),list): raise ValueError()
@@ -39,7 +39,7 @@ class WebFiles:
                 if not isinstance(e,dict) or not isinstance(e.get('name'),str) or '/' in e['name'] or '\\' in e['name'] or type(e.get('dir')) is not bool or type(e.get('size')) is not int: raise ValueError()
             return data
         except (ValueError,TypeError) as exc: raise ToolError('invalid_response: malformed WebFS listing') from exc
-    async def download(self,path): return await self.call('GET','download',{'path':sd_path(path)})
+    async def download(self,path): return await self.call('GET','storage/download',{'path':sd_path(path)})
     async def mutate(self,operation,path,new_path=None,content=None):
         path=sd_path(path)
         if path=='/ext': raise ToolError('invalid_path: cannot modify SD root')
@@ -50,6 +50,7 @@ class WebFiles:
             target=sd_path(new_path)
             if target=='/ext': raise ToolError('invalid_path: cannot replace SD root')
             params={'old':path,'new':target}
-        result=await self.call('POST',operation,params,content)
+        route='storage/upload' if operation=='upload' else operation
+        result=await self.call('POST',route,params,content)
         if result.strip()!=b'ok': raise ToolError('invalid_response: WebFS did not acknowledge operation')
         return {'ok':True}

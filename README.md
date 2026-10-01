@@ -44,8 +44,9 @@ adds an arbitrary-command endpoint.
 - Streamable HTTP MCP transport on port `8000`
 - Browser-based status and control interface
 - Firmware status, capabilities and diagnostics
-- Receive-only Sub-GHz job support
-- SD-card file access through the firmware RPC endpoints
+- Read-only locale, clock, date and timezone settings
+- Receive-only Sub-GHz job listing, polling and cancellation
+- SD-card list, download and upload through the stable storage RPC endpoints
 - Optional USB screen and button remote control
 - Docker hardening: read-only filesystem, dropped capabilities and process limit
 - LAN-only Traefik example with TLS and an IP allowlist
@@ -53,6 +54,17 @@ adds an arbitrary-command endpoint.
 
 Radio control remains receive-only. The gateway does not add RF transmission or
 an arbitrary-command interface.
+
+The current gateway requires firmware WebFS RPC API `1.1`. Older firmware that
+reports API `1.0` must be updated before using this version.
+
+## MCP tools
+
+- `tembed_status`, `tembed_capabilities`, `tembed_settings`
+- `tembed_diagnostics`
+- `tembed_start_rx`, `tembed_job`, `tembed_jobs`, `tembed_cancel_job`
+- `tembed_files_list`, `tembed_file_download`, `tembed_file_upload`
+- `tembed_usb_connect`, `tembed_usb_screen`, `tembed_usb_button`
 
 ## Quick start
 
