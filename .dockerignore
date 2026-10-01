@@ -1,0 +1,11 @@
+**
+!Dockerfile
+!requirements-docker-lock.txt
+!gateway.py
+
+!web_ui.py
+!web.html
+
+!web_files.py
+
+!usb_remote.py

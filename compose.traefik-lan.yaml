@@ -1,0 +1,48 @@
+# Prepared LAN-only variant. Replace only tembed-gateway in the existing stack.
+services:
+  tembed-gateway:
+    build:
+      context: /build/tembed-gateway
+      dockerfile: Dockerfile
+    image: tembed-gateway:local
+    container_name: tembed-gateway
+    restart: unless-stopped
+    init: true
+    command: ["--transport", "streamable-http"]
+    environment:
+      TEMBED_SERIAL: /dev/tembed
+      TEMBED_URL: http://192.168.178.35
+      MCP_ALLOWED_HOSTS: tembed-gateway:8000,tembed-gateway.myhomelabs.work,tembed-gateway.myhomelabs.work:443
+    devices:
+      - /dev/serial/by-id/usb-Flipper_Devices_Inc._Warp_FZESP32-if01:/dev/tembed:rw
+    group_add:
+      - '20'
+    expose:
+      - '8000'
+    networks:
+      - proxy
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: proxy
+      traefik.http.routers.tembed-gateway.rule: 'Host(`tembed-gateway.myhomelabs.work`)'
+      traefik.http.routers.tembed-gateway.entrypoints: websecure
+      traefik.http.routers.tembed-gateway.tls: 'true'
+      traefik.http.routers.tembed-gateway.tls.certresolver: cloudflare
+      traefik.http.routers.tembed-gateway.service: tembed-gateway
+      traefik.http.services.tembed-gateway.loadbalancer.server.port: '8000'
+      traefik.http.routers.tembed-gateway.middlewares: tembed-lan
+      traefik.http.middlewares.tembed-lan.ipallowlist.sourcerange: 192.168.178.0/24
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 1
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+networks:
+  proxy:
+    external: true
