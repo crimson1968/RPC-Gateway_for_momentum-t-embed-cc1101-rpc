@@ -8,6 +8,37 @@ The gateway exposes the firmware RPC API through MCP and includes a small web
 interface. It can reach the device through its Wi-Fi Web Filesystem API and can
 optionally map the USB serial device for screen and button control.
 
+## How the two repositories fit together
+
+This repository is the **host-side companion** to
+[`momentum-t-embed-cc1101-rpc`](https://github.com/crimson1968/momentum-t-embed-cc1101-rpc),
+which contains the ESP32 firmware and implements the Web Filesystem RPC API.
+Install that firmware on the T-Embed first; this gateway runs separately on a
+NAS, home server, or other Docker host.
+
+```text
+MCP client / browser
+        |
+        v
+this Docker gateway  -- USB serial -->  T-Embed screen and buttons
+        |
+        +-- private-LAN HTTP ------->  firmware Web Filesystem RPC
+```
+
+The connection methods complement each other:
+
+- **Wi-Fi RPC** provides status, capabilities, diagnostics, receive-only
+  Sub-GHz jobs, and SD-card operations. The device must be connected to Wi-Fi
+  with **Web Filesystem** running.
+- **USB serial** provides the live device screen and button control and remains
+  useful when the Web Filesystem service is stopped.
+- **MCP and the web UI** present those device functions to clients; they do not
+  emulate the firmware or replace the applications installed on the T-Embed.
+
+The shared intent is controlled remote access to the user's own device on a
+trusted private LAN. The radio RPC stays receive-only, and neither repository
+adds an arbitrary-command endpoint.
+
 ## Features
 
 - Streamable HTTP MCP transport on port `8000`
