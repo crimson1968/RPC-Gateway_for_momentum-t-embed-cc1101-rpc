@@ -23,12 +23,12 @@ def register_ui(server, device, hosts):
             host = request.headers.get('host', '')
             origin = request.headers.get('origin')
             if host not in allowed or (origin and origin not in {f'http://{host}', f'https://{host}'}):
-                return JSONResponse({'error': 'Host oder Origin nicht erlaubt.'}, status_code=403)
+                return JSONResponse({'error': 'Host or origin is not allowed.'}, status_code=403)
             if request.method == 'POST' and (
                 request.headers.get('x-tembed-ui') != '1' or
                 request.headers.get('content-type', '').split(';')[0] != 'application/json'
             ):
-                return JSONResponse({'error': 'JSON und UI-Header erforderlich.'}, status_code=403)
+                return JSONResponse({'error': 'JSON and the UI header are required.'}, status_code=403)
             try:
                 response = await fn(request)
             except ToolError as exc:
@@ -36,7 +36,7 @@ def register_ui(server, device, hosts):
                 code = 409 if message.startswith('busy:') else 404 if message.startswith('not_found:') else 400 if message.startswith(('invalid_frequency:', 'invalid_duration:', 'invalid_job_id:')) else 502
                 response = JSONResponse({'error': message}, status_code=code)
             except (ValueError, TypeError, TimeoutError):
-                response = JSONResponse({'error': 'Ungültige oder zu große Anfrage.'}, status_code=400)
+                response = JSONResponse({'error': 'The request is invalid or too large.'}, status_code=400)
             response.headers['Cache-Control'] = 'no-store'
             response.headers['X-Content-Type-Options'] = 'nosniff'
             response.headers['Content-Security-Policy'] = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
