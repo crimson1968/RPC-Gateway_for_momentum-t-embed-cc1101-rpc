@@ -15,7 +15,9 @@ services:
     ports:
       - "${NAS_LAN_IP:?Set NAS_LAN_IP in stack environment}:8787:8000"
     devices:
-      - /dev/serial/by-id/usb-Flipper_Devices_Inc._Warp_FZESP32-if01:/dev/tembed:rw
+      - source: /dev/ttyACM0
+        target: /dev/tembed
+        permissions: rw
     group_add:
       - '20'
     expose:

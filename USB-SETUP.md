@@ -7,9 +7,10 @@
 2. In the mcp-stack replace only tembed-gateway using compose.traefik-lan.yaml.
    Keep the existing other services and proxy network. This variant removes the
    direct port 8787 and uses Traefik HTTPS instead.
-3. Keep qFlipper enabled on the device. Verified NAS path:
-   /dev/serial/by-id/usb-Flipper_Devices_Inc._Warp_FZESP32-if01
-   Device permissions: group 20, mode 660. Compose maps this to /dev/tembed
+3. Keep qFlipper enabled on the device. The current deployment uses
+   /dev/ttyACM0. qFlipper also exposes the verified stable name
+   /dev/serial/by-id/usb-Flipper_Devices_Inc._Warp_FZESP32-if01.
+   Device permissions: group 20, mode 660. Compose maps the ACM device to /dev/tembed
    and adds group 20 to the non-root container. No privileged mode needed.
 4. Rebuild and redeploy the gateway in Dockhand. Restart alone does not rebuild.
    Dockhand build context /build/tembed-gateway must remain mounted.
@@ -66,6 +67,6 @@ modify AdGuard, Traefik or deploy to your NAS from this workspace.
 
 Eight local tests pass: five HTTP/UI tests and three USB/path tests, including
 fake serial handshake, fragmented protobuf input, screen frame and press/short/
-release sequence. JavaScript syntax checked. Docker image built. Real USB screen,
-button response, NAS deployment, DNS and certificate issuance remain unverified.
-No RF actions were triggered by these checks.
+release sequence. JavaScript syntax checked. Docker image built. The NAS
+deployment, LAN HTTPS, firmware API 1.1, and real USB screen stream were verified
+on 2026-10-02. No RF transmission is exposed or used by these checks.

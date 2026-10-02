@@ -58,6 +58,9 @@ an arbitrary-command interface.
 The current gateway requires firmware WebFS RPC API `1.1`. Older firmware that
 reports API `1.0` must be updated before using this version.
 
+See the **[English user guide](USER_GUIDE.md)** for normal startup, browser and
+MCP operation, Dockhand deployment, USB behavior, and troubleshooting.
+
 ## MCP tools
 
 - `tembed_status`, `tembed_capabilities`, `tembed_settings`
@@ -84,7 +87,7 @@ the T-Embed to the LAN and start **Web Filesystem** on the device.
 The included defaults match the original installation:
 
 - Device URL: `http://192.168.178.35`
-- USB mapping: `/dev/serial/by-id/usb-Flipper_Devices_Inc._Warp_FZESP32-if01`
+- USB mapping: host `/dev/ttyACM0` to container `/dev/tembed`
 - Container USB path: `/dev/tembed`
 - Serial device group: `20`
 

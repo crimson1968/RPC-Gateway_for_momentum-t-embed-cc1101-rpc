@@ -14,7 +14,9 @@ services:
       TEMBED_URL: http://192.168.178.35
       MCP_ALLOWED_HOSTS: tembed-gateway:8000,tembed-gateway.myhomelabs.work,tembed-gateway.myhomelabs.work:443
     devices:
-      - /dev/serial/by-id/usb-Flipper_Devices_Inc._Warp_FZESP32-if01:/dev/tembed:rw
+      - source: /dev/ttyACM0
+        target: /dev/tembed
+        permissions: rw
     group_add:
       - '20'
     expose:
