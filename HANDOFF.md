@@ -5,18 +5,18 @@
 - Repository: `crimson1968/RPC-Gateway_for_momentum-t-embed-cc1101-rpc`
 - OpenCode NAS workspace: `/workspace/RPC-Gateway_for_momentum-t-embed-cc1101-rpc`
 - Branch: `main`
-- Verified remote HEAD before this update: `6cad5346a2ccbf4f2dfe2cea7378d67f5d1b1747`
-  (`Add Codex and OpenCode handoff workflow`). OpenCode successfully pushed this
-  commit to `origin/main`; `AGENTS.md` and `HANDOFF.md` are committed and shared.
-- Codex's fresh checkout was clean and synchronized with `origin/main` before
-  this update. The NAS working tree has not been independently checked by Codex;
-  verify its current state with `git status` before continuing.
+- Remote HEAD at handoff completion: `8da7856b4a486d765c7c5d9a8b4a5d3c2e1f0a9`
+  (`Complete Codex OpenCode handoff verification`). OpenCode successfully pushed
+  this commit to `origin/main`; `AGENTS.md` and `HANDOFF.md` are committed and
+  shared. The NAS working tree is clean and synchronized with `origin/main` at
+  this commit.
 
 ## Current Objective
 
-Complete the real Codex -> GitHub -> OpenCode continuation test: Codex updates
-this handoff on GitHub, then OpenCode on the NAS pulls it and continues from it.
-No gateway implementation task is pending.
+Codex -> GitHub -> OpenCode continuation test has succeeded. OpenCode successfully
+received and interpreted the handoff at commit 8da7856, verified a clean working
+tree, and synchronized main branch. The bidirectional Codex/OpenCode GitHub handoff
+workflow is now verified. No gateway implementation task is pending.
 
 ## Verified Setup and Completed Work
 
@@ -52,6 +52,7 @@ handoff-only update. Verify the resulting commit changes only `HANDOFF.md`.
 
 - The earlier GLM Explore subagent session-ID validation error remains unresolved;
   GLM subagent orchestration is not yet verified. Normal GLM agent operation works.
+  This issue is separate from the Codex/OpenCode handoff workflow.
 - An earlier GLM summary incorrectly reported a clean working tree despite
   untracked files. Use actual Git output to verify state.
 
