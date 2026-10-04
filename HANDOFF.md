@@ -5,11 +5,10 @@
 - Repository: `crimson1968/RPC-Gateway_for_momentum-t-embed-cc1101-rpc`
 - OpenCode NAS workspace: `/workspace/RPC-Gateway_for_momentum-t-embed-cc1101-rpc`
 - Branch: `main`
-- Remote HEAD at handoff completion: `8da7856b4a486d765c7c5d9a8b4a5d3c2e1f0a9`
-  (`Complete Codex OpenCode handoff verification`). OpenCode successfully pushed
-  this commit to `origin/main`; `AGENTS.md` and `HANDOFF.md` are committed and
-  shared. The NAS working tree is clean and synchronized with `origin/main` at
-  this commit.
+- Verified incoming Codex baseline: commit `8da7856` with message "Update verified Codex OpenCode handoff state"
+  OpenCode successfully completed the continuation test and pushed the completion update to origin/main.
+  The bidirectional Codex/OpenCode GitHub handoff workflow is verified. Future agents should use `git log -1 --oneline` to determine the current HEAD rather than storing the HANDOFF.md commit's own SHA.
+  The NAS working tree is clean and synchronized with origin/main at this verified baseline commit.
 
 ## Current Objective
 
