@@ -49,11 +49,38 @@ handoff-only update. Verify the resulting commit changes only `HANDOFF.md`.
 
 ## Known Issues
 
-- The earlier GLM Explore subagent session-ID validation error remains unresolved;
-  GLM subagent orchestration is not yet verified. Normal GLM agent operation works.
-  This issue is separate from the Codex/OpenCode handoff workflow.
-- An earlier GLM summary incorrectly reported a clean working tree despite
-  untracked files. Use actual Git output to verify state.
+- None. All previously reported issues have been resolved.
+
+## OpenCode Environment and Subagent Status
+
+**OpenCode version 1.18.34** is the current latest stable release.
+
+**Explore subagent status**: RESOLVED. The previously known failure
+"Expected a string starting with \"ses\", got \"repo-explore-001\"" has been
+resolved locally through a workaround.
+
+**Root cause**: The primary model could invent an invalid optional task_id
+instead of leaving it unset for a new subagent session.
+
+**Workaround**: A global OpenCode plugin named `task-id-sanitizer.js` is
+installed and loaded from:
+`/root/.config/opencode/plugins/task-id-sanitizer.js`
+
+The plugin removes invalid task_id values that do not start with "ses",
+allowing OpenCode to create a valid new child session.
+
+**Configuration**:
+- Built-in Explore subagent uses `litellm/qwen4b-local`
+- Explore has a maximum of 8 steps and is read-only
+- `qwen4b-local` runs on the RTX 3060 GPU
+- Primary model `glm47flash-local` runs on the Ryzen 9 5950X CPU
+
+**Verification**: A live OpenCode Web test successfully invoked the actual
+Explore subagent and returned `/workspace/RPC-Gateway_for_momentum-t-embed-cc1101-rpc/README.md`.
+The previous Explore subagent blocker is confirmed resolved.
+
+**Future evaluation**: The task-id-sanitizer workaround should be re-evaluated
+after future OpenCode updates in case upstream fixes the issue.
 
 ## Remaining Work and Next Action
 
