@@ -4,7 +4,8 @@
 
 - Repository: `crimson1968/RPC-Gateway_for_momentum-t-embed-cc1101-rpc`
 - Branch: `main`. Use `git log -1 --oneline` for the current HEAD.
-- Local commit pending for the work below; not yet pushed (awaiting user authorization).
+- HEAD `e1d13e3` ("Organize gateway browser UI into tabs") is pushed to
+  `origin/main`. The Wi-Fi Remote transport and the tab redesign are both live.
 
 ## Current Objective
 
@@ -44,12 +45,18 @@ button control over Wi-Fi with no USB cable. Pairs with the firmware's new
   has no local Python and the NAS host lacks `ensurepip`).
 - Tab redesign verified visually in the browser pane (tabs switch; each panel
   shows its own cards; no console/layout breakage).
-- Live end-to-end: ran `wifi_remote.py` against the device (192.168.178.35, token
-  on the Wi-Fi Remote screen) from the NAS host; WebSocket handshake + token auth
-  succeeded and a 1024-byte screen frame streamed back. The firmware bridge itself
-  was separately validated (stable screen stream).
-- `git diff` reviewed: only the files listed above changed; no secrets committed
-  (token is an env reference, never a literal).
+- Live end-to-end (transport, from inside the deployed `tembed-gateway`
+  container): `WifiRemote.connect()` resolved `ws://192.168.178.35:80/rpc` with
+  token `VN0SD3IF`, returned `connected: True`, and `snapshot()` delivered a
+  1368-byte screen frame. `key("down")` and `key("up")` each returned `{ok: True}`
+  and the frame hash changed in response, confirming the input path. Clean
+  `close()`.
+- Live end-to-end (browser UI, at `tembed-gateway.myhomelabs.work`, Remote
+  control tab): "Connect Wi-Fi" → badge "Wi-Fi: Connected", the device Browser
+  menu mirrored in the canvas; pressing ↑ moved the on-screen selection
+  (version.txt → README.md); "Disconnect" returned to "Wi-Fi: Not connected".
+- `git diff` reviewed before commit: only `web.html` + `HANDOFF.md` changed in the
+  tab commit; no secrets committed (token is an env reference, never a literal).
 
 ## Known Issues / Notes
 
@@ -61,9 +68,23 @@ button control over Wi-Fi with no USB cable. Pairs with the firmware's new
   remote control works on the desktop/menus; driving a running app needs the
   firmware "stage 2b" work (out of scope here).
 
+## Deployment (done)
+
+- Stack: `mcp-server`, service `tembed-gateway`, on the NAS at
+  `/volume2/docker/dockhand/stacks/Ugreen-NAS/mcp-server/`.
+- `compose.yaml` build context pinned to
+  `...RPC-Gateway...git#e1d13e334c6294fc3a351e8fe5a727719b6bf483` (a timestamped
+  `compose.yaml.bak-*` backup sits beside it). `.env` holds
+  `TEMBED_REMOTE_TOKEN=VN0SD3IF`; container env also has
+  `TEMBED_URL=http://192.168.178.35`.
+- Redeployed via `docker compose -p mcp-server build tembed-gateway` then
+  `up -d tembed-gateway`. Live tab UI + Wi-Fi Remote verified (see above).
+
 ## Recommended Next Action
 
-1. Rebuild/redeploy the gateway image (Dockhand) so `wifi_remote.py` is included
-   and the new UI/tools ship. Set `TEMBED_REMOTE_TOKEN` in the stack env.
-2. On the device, start "Wi-Fi Remote"; then test the browser "Connect Wi-Fi"
-   button and the `tembed_wifi_*` MCP tools end to end.
+- Nothing outstanding for this task. For future gateway changes, redeploy by
+  bumping the pinned SHA in the `mcp-server` compose, then
+  `docker compose -p mcp-server build tembed-gateway && ... up -d tembed-gateway`
+  (or Dockhand "Save & redeploy").
+- Operational prerequisite for Wi-Fi Remote at runtime: the device must be
+  running its "Wi-Fi Remote" feature and the token must match `TEMBED_REMOTE_TOKEN`.
