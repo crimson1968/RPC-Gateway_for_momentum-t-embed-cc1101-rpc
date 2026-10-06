@@ -26,6 +26,9 @@ button control over Wi-Fi with no USB cable. Pairs with the firmware's new
 - `compose.yaml`, `compose.traefik-lan.yaml`: optional `TEMBED_REMOTE_TOKEN`
   env (empty = Wi-Fi tools disabled).
 - `README.md`: Features, MCP tools, Wi-Fi Remote configuration, Main files.
+- Browser UI (`web_ui.py` / `web.html`): `/ui/api/wifi` GET+POST routes and a
+  "Connect Wi-Fi" button in the remote-control card. USB and Wi-Fi share the same
+  screen canvas and keys via a `remoteTransport` variable.
 
 ## Tests and Verification
 
@@ -49,7 +52,7 @@ button control over Wi-Fi with no USB cable. Pairs with the firmware's new
 
 ## Recommended Next Action
 
-1. Review the local commit and push to `origin/main` once authorized.
-2. Rebuild/redeploy the gateway image (Dockhand) so `wifi_remote.py` is included.
-3. Optional follow-up: surface the Wi-Fi screen/buttons in the browser UI
-   (`web_ui.py` / `web.html`), mirroring the USB view.
+1. Rebuild/redeploy the gateway image (Dockhand) so `wifi_remote.py` is included
+   and the new UI/tools ship. Set `TEMBED_REMOTE_TOKEN` in the stack env.
+2. On the device, start "Wi-Fi Remote"; then test the browser "Connect Wi-Fi"
+   button and the `tembed_wifi_*` MCP tools end to end.

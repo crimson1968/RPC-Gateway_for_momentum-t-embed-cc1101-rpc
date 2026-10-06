@@ -14,6 +14,7 @@ from starlette.responses import HTMLResponse, JSONResponse, Response
 def register_ui(server, device, hosts):
     files = WebFiles(device)
     usb = server.tembed_usb
+    wifi = server.tembed_wifi
     allowed = set(hosts)
     page = Path(__file__).with_name('web.html').read_text(encoding='utf-8')
 
@@ -151,4 +152,28 @@ def register_ui(server, device, hosts):
             return JSONResponse(await asyncio.to_thread(usb.close))
         if action=='key' and set(data)<= {'action','key','long'}:
             return JSONResponse(await asyncio.to_thread(usb.key,data.get('key'),data.get('long',False)))
+        raise ValueError('invalid action')
+
+    @server.custom_route('/ui/api/wifi', methods=['GET'])
+    @guarded
+    async def wifi_status(request):
+        return JSONResponse(wifi.snapshot())
+
+    @server.custom_route('/ui/api/wifi', methods=['POST'])
+    @guarded
+    async def wifi_action(request):
+        body = bytearray()
+        async with asyncio.timeout(5):
+            async for chunk in request.stream():
+                body.extend(chunk)
+                if len(body)>1024: raise ValueError('body too large')
+        data=json.loads(body)
+        if not isinstance(data,dict): raise ValueError('invalid action')
+        action=data.get('action')
+        if action=='connect' and set(data)=={'action'}:
+            return JSONResponse(await asyncio.to_thread(wifi.connect))
+        if action=='disconnect' and set(data)=={'action'}:
+            return JSONResponse(await asyncio.to_thread(wifi.close))
+        if action=='key' and set(data)<= {'action','key','long'}:
+            return JSONResponse(await asyncio.to_thread(wifi.key,data.get('key'),data.get('long',False)))
         raise ValueError('invalid action')
