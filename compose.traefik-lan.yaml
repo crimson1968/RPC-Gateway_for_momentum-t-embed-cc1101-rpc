@@ -12,6 +12,9 @@ services:
     environment:
       TEMBED_SERIAL: /dev/tembed
       TEMBED_URL: http://192.168.178.35
+      # Wi-Fi Remote (optional): the device's "Wi-Fi Remote" token, enabling the
+      # tembed_wifi_* tools (screen/buttons over Wi-Fi, no USB). Empty = disabled.
+      TEMBED_REMOTE_TOKEN: "${TEMBED_REMOTE_TOKEN:-}"
       MCP_ALLOWED_HOSTS: tembed-gateway:8000,tembed-gateway.myhomelabs.work,tembed-gateway.myhomelabs.work:443
     devices:
       - source: /dev/ttyACM0

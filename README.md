@@ -48,6 +48,8 @@ adds an arbitrary-command endpoint.
 - Receive-only Sub-GHz job listing, polling and cancellation
 - SD-card list, download and upload through the stable storage RPC endpoints
 - Optional USB screen and button remote control
+- Optional Wi-Fi screen and button remote control (no USB cable), via the
+  firmware's "Wi-Fi Remote" WebSocket endpoint
 - Docker hardening: read-only filesystem, dropped capabilities and process limit
 - LAN-only Traefik example with TLS and an IP allowlist
 - No OpenAI API key required
@@ -68,6 +70,21 @@ MCP operation, Dockhand deployment, USB behavior, and troubleshooting.
 - `tembed_start_rx`, `tembed_job`, `tembed_jobs`, `tembed_cancel_job`
 - `tembed_files_list`, `tembed_file_download`, `tembed_file_upload`
 - `tembed_usb_connect`, `tembed_usb_screen`, `tembed_usb_button`
+- `tembed_wifi_connect`, `tembed_wifi_screen`, `tembed_wifi_button` — screen and
+  buttons over Wi-Fi (no USB). Requires the device's **Wi-Fi Remote** feature
+  running and `TEMBED_REMOTE_TOKEN` set to its token (see below).
+
+### Wi-Fi Remote configuration
+
+The `tembed_wifi_*` tools talk to the firmware's "Wi-Fi Remote" WebSocket
+endpoint (`ws://<device>:80/rpc`). Set these in the gateway environment:
+
+- `TEMBED_REMOTE_TOKEN` — the 8-character token shown on the device's Wi-Fi
+  Remote screen (also settable there). Empty disables the Wi-Fi tools.
+- `TEMBED_URL` (already set) supplies the device host; override the WebSocket
+  origin with `TEMBED_REMOTE_URL` (e.g. `ws://192.168.178.35`) if needed.
+
+Start **Wi-Fi Remote** on the device first; it must stay running to serve.
 
 ## Quick start
 
@@ -108,6 +125,7 @@ See [HTTPS.md](HTTPS.md) and [USB-SETUP.md](USB-SETUP.md) for the full setup.
 - `gateway.py` — MCP server and firmware API client
 - `web_ui.py` / `web.html` — local web interface
 - `usb_remote.py` — optional USB remote support
+- `wifi_remote.py` — optional Wi-Fi remote support (WebSocket RPC)
 - `web_files.py` — WebFS file operations
 - `Dockerfile` — container image
 - `compose.yaml` — direct LAN port deployment

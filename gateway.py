@@ -354,6 +354,32 @@ def make_server(device: Device, **settings) -> FastMCP:
         """
         return await asyncio.to_thread(usb.key, key, long)
 
+    # Wi-Fi Remote: the same GUI RPC over the firmware's WebSocket endpoint, so
+    # screen streaming and button control work without a USB cable. Requires the
+    # device's "Wi-Fi Remote" feature running and TEMBED_REMOTE_TOKEN set.
+    from wifi_remote import WifiRemote
+    wifi = WifiRemote()
+    server.tembed_wifi = wifi
+
+    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False))
+    async def tembed_wifi_connect() -> dict:
+        """Open the Wi-Fi Remote WebSocket session and start screen streaming. No button presses."""
+        return await asyncio.to_thread(wifi.connect)
+
+    @server.tool(annotations=read)
+    async def tembed_wifi_screen() -> dict:
+        """Wi-Fi Remote state and latest 128x64 monochrome framebuffer, base64 in vertical 8-pixel pages.
+        May be stale: inspect connected and received_at. Does not open a session.
+        """
+        return wifi.snapshot()
+
+    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False))
+    async def tembed_wifi_button(key: Literal["up", "down", "left", "right", "ok", "back"], long: bool = False) -> dict:
+        """Press one device GUI key over Wi-Fi. The current app determines its effect, including destructive actions.
+        Inspect the screen and user's intent first. Never retry automatically.
+        """
+        return await asyncio.to_thread(wifi.key, key, long)
+
     return server
 
 
