@@ -29,10 +29,21 @@ button control over Wi-Fi with no USB cable. Pairs with the firmware's new
 - Browser UI (`web_ui.py` / `web.html`): `/ui/api/wifi` GET+POST routes and a
   "Connect Wi-Fi" button in the remote-control card. USB and Wi-Fi share the same
   screen canvas and keys via a `remoteTransport` variable.
+- Browser UI redesigned into four tabs (`web.html` only, no JS/route changes):
+  **Remote control** (USB/Wi-Fi shared screen + keys), **Reception** (start RX +
+  result), **Device** (Wi-Fi/WebFS status, settings, diagnostics, capabilities),
+  **SD card**. All element IDs and the existing script are unchanged; a small
+  `showTab()` toggles `.tab-panel` visibility. Polling runs regardless of the
+  active tab. The Wi-Fi Remote feature was already fully present (screen stream +
+  all buttons); it was just buried in the old single-column layout.
 
 ## Tests and Verification
 
-- `pytest tests/test_gateway.py` → 2 passed (venv from requirements lock + pytest).
+- `pytest tests/test_gateway.py` → 2 passed (run in a `python:3.11-slim`
+  container on the NAS host with `requirements-docker-lock.txt` + pytest; the PC
+  has no local Python and the NAS host lacks `ensurepip`).
+- Tab redesign verified visually in the browser pane (tabs switch; each panel
+  shows its own cards; no console/layout breakage).
 - Live end-to-end: ran `wifi_remote.py` against the device (192.168.178.35, token
   on the Wi-Fi Remote screen) from the NAS host; WebSocket handshake + token auth
   succeeded and a 1024-byte screen frame streamed back. The firmware bridge itself
