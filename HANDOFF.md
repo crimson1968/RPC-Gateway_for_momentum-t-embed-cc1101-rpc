@@ -12,8 +12,13 @@
 Add a **Wi-Fi Remote** transport to the gateway: the same Flipper GUI RPC that
 `usb_remote.py` speaks, carried over the firmware's WebSocket endpoint
 (`ws://<device>:80/rpc?token=...`) instead of USB. Gives screen streaming and
-button control over Wi-Fi with no USB cable. Pairs with the firmware's new
-"Wi-Fi Remote" feature (merged in the firmware repo, PR #5 / commit on `main`).
+button control over Wi-Fi with no USB cable. Pairs with the firmware's
+"Wi-Fi Remote" feature, now fully on `crimson1968/momentum-t-embed-cc1101-rpc`
+`main`: stage 1 (WebSocket-to-RPC bridge, PR #5) and stage 2 (auto-recovery /
+"Return Home" dead-man's switch, PR #4, merge commit `d134d42`). The merged
+feature branches (`feature/wifi-remote`, `wifi-remote-stage1`) and the
+`feature/low-battery-shutdown` branch have been deleted; that repo's local and
+remote state is just `main`.
 
 ## Completed Work
 
@@ -65,8 +70,12 @@ button control over Wi-Fi with no USB cable. Pairs with the firmware's new
   (`/dev/ttyACM0`); run the gateway where the device is attached, or adjust the
   compose `devices:` mapping if running Wi-Fi-only.
 - Firmware context: this port's desktop suspends Wi-Fi when any app launches, so
-  remote control works on the desktop/menus; driving a running app needs the
-  firmware "stage 2b" work (out of scope here).
+  remote control works on the desktop/menus. Stage 2 adds an auto-recovery
+  dead-man's switch (recovery timer + "Return Home") for when a launched app
+  seizes the radio and the link drops. The app-exit half works; the "Return
+  Home" auto-reconnect is unreliable (`wlan_hal` resume) and currently recovers
+  only via a reboot — tracked as firmware issue
+  `crimson1968/momentum-t-embed-cc1101-rpc#6`.
 
 ## Deployment (done)
 
